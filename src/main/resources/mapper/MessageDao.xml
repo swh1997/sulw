@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.dgut.jsf.mapper.MessageDao">
+	<!--查询会员的留言 一对一-->
+	<select id="findMessageByMember" parameterType="Integer"  resultMap="findMessageByMemberResult">
+		select m.* ,member_name,u.user_id
+		from t_message m,t_member member,t_user u
+		where m.member_id=member.member_id and member.user_id=u.user_id and
+		m.member_id = #{membr_id}
+	</select>
+	<resultMap id="findMessageByMemberResult" type="Message">
+		<id property="mes_id" column="mes_id"></id>
+		<result property="mes_title" column="mes_title"></result>
+		<result property="mes_content" column="mes_content"></result>
+		<result property="mes_read" column="mes_read"></result>
+		<result property="mes_time" column="mes_time"></result>
+		<association property="member" javaType="Member">
+			<result property="member_name" column="member_name"></result>
+			<association property="user" javaType="User">
+				<id property="user_id" column="user_id"></id>
+			</association>
+		</association>
+
+	</resultMap>
+	<!--删除留言-->
+	<delete id="deleteMessage" parameterType="int">
+		delete from t_message where mes_id = #{mes_id}
+	</delete>
+	<!--添加留言-->
+	<insert id="addMessage" parameterType="Message">
+		insert into
+		t_message(member_id , mes_title, mes_content,mes_time)
+		values(#{member.member_id},#{mes_title},#{mes_content},#{mes_time})
+	</insert>
+	<select id="findMessageNotRead" resultMap="findMessageByMemberResult">
+		select m.*,member_name,member.user_id
+		from t_message m,t_member member,t_user u
+				where mes_read = 0 and m.member_id=member.member_id and member.user_id=u.user_id
+	</select>
+
+	<select id="findMessageRead" resultMap="findMessageByMemberResult">
+		select m.*,member_name,member.user_id
+		from t_message m,t_member member,t_user u
+		where mes_read = 1 and m.member_id=member.member_id and member.user_id=u.user_id
+	</select>
+
+
+
+
+	
+	<select id="findMessageById" parameterType="int"  resultMap="findMessageByMemberResult">
+		select m.* ,member_name,u.user_id
+		from t_message m,t_member member,t_user u
+		where mes_id = #{mes_id} and  m.member_id=member.member_id and member.user_id=u.user_id
+	</select>
+	<update id="ChangeMessageState" parameterType="int" >
+		update t_message set mes_read = 1 where mes_id =#{mes_id}
+	</update>
+</mapper>

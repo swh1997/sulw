@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.dgut.jsf.mapper.MemberDao">
+    <insert id="addUser" parameterType="User">
+		insert into
+		t_user(user_id,user_pwd,user_type)
+		values(#{user_id},#{user_pwd},#{user_type})
+	</insert>
+    <insert id="addMember" parameterType="Member" >
+		insert into
+		t_member(user_id,member_name,member_sex,member_birthDate,member_mobile,member_wechat,member_qq,member_address,member_resume,member_idcard)
+		values(#{user.user_id},#{member_name},#{member_sex},#{member_birthDate},#{member_mobile},'0','0','0','0',#{member_idcard})
+	</insert>
+	<delete id="deleteMember" parameterType="String">
+		DELETE FROM t_user where
+		user_id =#{user_id}
+	</delete>
+	<update id="updateMember" parameterType="Member">
+		update t_member set
+		member_name=#{member_name},
+		member_sex=#{member_sex},
+		member_wechat=#{member_wechat},
+		member_qq=#{member_qq},
+		member_address=#{member_address},
+		member_resume=#{member_resume},
+		member_mobile=#{member_mobile}
+		where
+		member_id=#{member_id}
+	</update>
+
+</mapper>

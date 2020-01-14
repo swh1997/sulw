@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html>
+<head>
+<meta charset="utf-8">
+<title>健身俱乐部管理系统</title>
+	<link rel="shortcut icon" type="image/x-icon" href="/images/favicon.ico">
+<link rel="stylesheet" type="text/css" href="/h-ui/css/H-ui.min.css" />
+<link rel="stylesheet" type="text/css" href="/h-ui.admin/css/H-ui.admin.css" />
+<link rel="stylesheet" type="text/css" href="/lib/Hui-iconfont/1.0.8/iconfont.css" />
+<link rel="stylesheet" type="text/css" href="/h-ui.admin/skin/default/skin.css" id="skin" />
+<link rel="stylesheet" type="text/css" href="/h-ui.admin/css/style.css" />
+<link rel="stylesheet" href="/css/style1.css" type="text/css" media="all"/>
+	<script src="/js/jquery-1.8.3.min.js"></script>
+	<script >
+		$(document).ready(function(){
+            //返回顶部
+            $.Huitotop();
+            //收缩功能
+            $(".panel").Huifold({
+                titCell : '.panel-header',
+                mainCell : '.panel-body',
+                type : 1,
+                trigger : 'click',
+                className : "selected",
+                speed : "first",
+            });
+            //会员修改密码
+            $("#form-user-passwordEdit").validate({
+                rules:{
+                    user_pwd:{
+                        required:true,
+                        minlength : 6,
+                        maxlength : 15
+                    },
+                    password:{
+                        required:true,
+                        equalTo: "#user_pwd"
+                    }
+                },
+                messages: {
+                    password : {
+                        equalTo : "两次输入的密码不一致！",
+                    },
+                },
+                onkeyup:false,
+                focusCleanup:true,
+                success:"valid",
+                submitHandler:function(form){
+                    $(form).ajaxSubmit({
+                        type: 'post',
+                        url: "/user/updatePasswordWeb" ,
+                        dataType:"text",
+                        async: false,
+                        success: function(data){
+                            if(data=="1"){
+                                layer.confirm('修改成功！请重新登录', {
+                                    btn: ['确定']
+                                },  function(){
+                                    window.location.href="/";
+                                });
+                            }else{
+                                layer.alert("修改失败！");
+                            }
+                        },
+                        error: function(XmlHttpRequest, textStatus, errorThrown){
+                            layer.alert("不行，请求失败，修改失败！");
+                            //location.reload();
+                        }
+                    });
+                }
+            });
+            //会员修改信息
+            $("#form-member-edit").validate({
+                        rules:{
+                            member_wechat:{
+                                maxlength:20,
+                            },
+                            member_phone:{
+                                isMobile:true,
+                            },
+                            member_qq:{
+                                maxlength:10,
+                                isDigits:true,
+                            }
+                        },
+                        messages : {
+                            member_qq:{
+                                maxlength:"目前最多也只有10位数的qq号而已",
+                            },
+                        },
+                        onkeyup : false,
+                        focusCleanup : true,
+                        success : "valid",
+                        submitHandler : function(form) {
+                            $(form)
+                                .ajaxSubmit(
+                                    {
+                                        type : "post",
+                                        url : "/member/updateMember",
+                                        dataType : "text",
+                                        success: function(data){
+                                            if(data=="1"){
+                                                layer.confirm('个人信息修改成功！', {
+                                                    btn: ['确定']
+                                                },  function(){
+                                                    location.reload();
+                                                });
+                                            }else {
+                                                layer.alert("个人信息修改失败！1");
+                                            }
+                                        },
+                                        error: function(XmlHttpRequest, textStatus, errorThrown){
+                                            layer.alert("个人信息修改失败！2");
+                                        }
+                                    });
+                        }
+                    });
+            /*课时-显示*/
+            findSmQuantityById=function (id){
+				var va=parseInt(id);
+				alert(va);
+				var smid=$("#btn"+va).val();
+				alert(smid);
+				$.ajax({
+					type: "get",                           //传数据的方式
+					url: "/setMeal/toClassHourQuantity?sm_id="+smid,
+					contentType : "application/json;charset=UTF-8",
+					dataType:"json",
+					success: function(data) {
+						var html="";
+					    for(var i=0;i<data.length;i++) {
+                            html += (data[i].smch_quantity+data[i].smch_present)+"课时（送"+data[i].smch_present+"课时）<br>";
+                        }
+					    alert(data[0].sm_id);
+                        $("#smchs"+data[0].sm_id).html(html);
+					}
+				});
+			}
+			/*套餐-购买*/
+			buySm=function(value){
+				alert(value);
+				var smid=value;
+				$.ajax({
+					type: "post",                           //传数据的方式
+					url: "/setMeal/toSetMealBuyWeb",
+					//data:"sm_id="+smid,
+					//contentType : "application/json;charset=UTF-8",
+					dataType:"text",
+					success: function(data){  //传数据成功之后的操作   result是servlet传过来的数据  这个函数对result进行处理，让它显示在 输入框中
+						if(data==-2){
+							layer.confirm('你没有登录，请回到主页进行登录才可购买套餐！', {
+								btn: ['确定']
+							},  function(){
+								window.location.href="/";
+							});
+						}else if(data==-1) {
+							layer.confirm('购买套餐失败！', {
+								btn: ['确定']
+							},  function(){
+								window.location.href="/setMeal/findUpSetMealWeb";
+							});
+						}else if(data==0){
+							alert("一般不会出现");
+						}else if(data==1){
+							layer.confirm('支付成功！', {
+								btn: ['确定']
+							}
+								/*
+								$.ajax({
+									type: "post",                           //传数据的方式
+									url: "/pay/AliPay",
+									data:"sm_id="+smid,
+									contentType : "application/json;charset=UTF-8",
+									dataType:"json",
+									success: function(data) {
+                                      alert("购买成功");
+									}
+									});
+								*/
+							);
+						}
+
+					}
+				});
+			}
+			/*教练-预约*/
+           appoint=function(val){
+			   var chid=val*1;
+           	var coachid=$('#coachid').val()*1;
+			   alert(coachid+chid);
+		location.href="/coach/toAppointWeb?ch_id="+chid+"&coach_id="+coachid;
+			}
+		});
+	</script>
+</head>
+<body>
+<div id="hearder2" class="clearfix">
+	<div class="logo">
+   	  <img src="/img/index.png" >
+  </div>
+  <div class="logo-name">健身俱乐部</div>
+    <div class="form-tools">
+      	<div class="tools-link">
+        	<a href="/user/toLoginWeb">管理员后台登录入口</a>
+			<p th:if="${not #strings.isEmpty(session.m_id)}">
+				会员
+			</p>
+			<p th:if="${ #strings.isEmpty(session.m_id)}">
+				请先登录
+			</p>
+        </div>
+    </div>
+</div>
+<!--
+<div id="menu-box" class="clearfix">
+		<ul>
+            <li><a href="/">主页</a></li>
+			<li><a href="/coach/findUpCoachWeb">教练信息</a></li>
+			<li><a href="/activity/findUpActivityWeb">活动信息</a></li>
+			<li><a href="/notice/findNoticeWeb">系统公告</a></li>
+			<li><a href="/facilityEquipment/findUpFacilityEquipmentWeb">设备和场地</a></li>
+            <li><a href="/setMeal/findUpSetMealWeb">套餐信息</a></li>
+			<span th:if="${not #strings.isEmpty(session.m_id)}" th:remove="tag">
+            <li><a href="/inform/findMyselfInformWeb">我的消息</a></li>
+            <li><a href="/message/findMessageByMemberWeb">联系我们</a></li>
+            <li><a href="/user/toPerfectMemberWeb">个人中心</a></li>
+            <li><a href="/user/Weblogout">退出登录</a></li>
+        </span>
+    </ul>
+</div><br>-->
+<!-- detail -->
+<div id="detail2-box" >
+
+
+	<span th:if="${sb} eq 'facilityequipment'" th:remove="tag">
+<div class="page-container"><img alt="" src="/img/facilityequipment.png" align="middle"><br>
+		  当前位置：<a href="/welcome/member">主页</a> ---> 场地设备信息<br><br>
+		<form action="/facilityEquipment/findFacilityEquipmentByTitleWeb" method="post">
+				<select class="select" style="width:100px" name="condition" size="1">
+				<option value="equ_name">名称</option>
+			</select>
+			<input type="text" class="input-text" style="width:200px" placeholder="先选择左边的需要查询的条件" name="input">
+				<button type="submit" class="btn btn-success radius"><i class="Hui-iconfont">&#xe665;</i> 搜场地和设备</button>
+		</form>
+	<th:block th:each="equ,equipmentStat : ${equipment}">
+			<div class="panel panel-default mt-15">
+				<div class="panel-header clearfix">
+					<span class="f-l" th:text="'主题：'+${equ.equ_name}"></span>
+					<span class="f-r" th:text="'数量：(个)'+(${equ.equ_quantity}-${equ.equ_repairquantity})"></span>
+				</div>
+						<div class="panel-body" style="display: none;">
+							<table class="table table-border table-bordered table-bg mt-5">
+								<thead>
+									<tr>
+										<th colspan="2" scope="col">场地设备详情</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<th width="15%" >名称</th>
+										<td th:text="${equ.equ_name}"></td>
+									</tr>
+									<tr>
+										<th >描述</th>
+										<td><textarea rows="" cols=""  class="textarea" readonly="readonly" th:text="${equ.equ_content}"></textarea></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+	</th:block>
+	</div>
+	</span>
+
+
+	<span th:if="${sb} eq 'activity'" th:remove="tag">
+		<div class="page-container"><img alt="" src="/img/act.png" align="middle"><br>
+    当前位置：<a href="/">主页</a> ---> 活动信息<br><br>
+		<form action="/activity/findUpActivityByTitleWeb" method="post">
+				<select class="select" style="width:100px" name="condition" size="1">
+				<option value="coach_name">教练名称</option>
+				<option value="act_name">活动主题</option>
+			</select>
+			<input type="text" class="input-text" style="width:200px" placeholder="先选择左边的需要查询的条件"  name="input">
+			<button type="submit" class="btn btn-success radius"><i class="Hui-iconfont">&#xe665;</i> 搜活动</button>
+		</form>
+	<th:block th:each="act,activityStat : ${activity}">
+		<div class="panel panel-default mt-15">
+			<div class="panel-header clearfix">
+				<span th:text="'主题：'+${act.act_name}" class="f-l"></span>
+				<span  th:text="'活动开始时间：'+${act.act_time}" class="f-r"></span>
+			</div>
+			<div class="panel-body" style="display: none;">
+							<table class="table table-border table-bordered table-bg mt-5">
+								<thead>
+									<tr>
+										<th colspan="2" scope="col">活动详情</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<th width="15%">活动标题</th>
+										<td  th:text="${act.act_name}"></td>
+									</tr>
+									<tr>
+                                        <th width="15%">教练</th>
+                                        <td th:text="${act.coach.coach_name}+',性别：'+${act.coach.coach_sex}"></td>
+                                    </tr>
+
+                                    <tr>
+                                        <th width="15%">教练特长</th>
+                                        <td th:text="${act.coach.coach_expert}"></td>
+                                    </tr>
+                                    <tr>
+                                        <th width="15%">教练简介</th>
+                                        <td ><textarea rows="" cols=""  class="textarea" readonly="readonly"  th:text="${act.coach.coach_resume}"></textarea></td>
+                                    </tr>
+									<tr>
+										<th >活动内容</th>
+										<td><textarea rows="" cols=""  class="textarea" readonly="readonly"  th:text="${act.act_content}"></textarea></td>
+									</tr>
+									<tr>
+										<th>活动时间</th>
+										<td th:text="${act.act_time}"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+				</div>
+	</th:block>
+	</div>
+	</span>
+
+
+	<span th:if="${sb} eq 'coach'" th:remove="tag">
+		    <div class="page-container">
+            <img alt="" src="/img/coach.png" align="middle"><br>
+    当前位置：<a href="/">主页</a> ---> 教练信息<br><br>
+                <form action="/coach/findUpCoachByTitleWeb" method="post">
+				<select class="select" style="width:100px" name="condition" size="1">
+				<option value="coach_name">教练名称</option>
+				<option value="coach_sex">性别</option>
+                <option value="coach_expert">特长</option>
+			</select>
+			<input type="text" class="input-text" style="width:200px" placeholder="先选择左边的需要查询的条件"  name="input">
+			<button type="submit" class="btn btn-success radius"><i class="Hui-iconfont">&#xe665;</i> 搜活动</button>
+		</form>
+              <th:block th:each="coa,coachStat : ${coach}">
+		<div class="panel panel-default mt-15">
+			<div class="panel-header clearfix">
+				<span th:text="'教练名称：'+${coa.coach_name}" class="f-l"></span>
+				<span  th:text="'特长：'+${coa.coach_expert}" class="f-r"></span>
+			</div>
+			<div class="panel-body" style="display: none;">
+							<table class="table table-border table-bordered table-bg mt-5">
+								<thead>
+									<tr>
+										<th colspan="2" scope="col">教练详情</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+                                        <th width="15%">教练</th>
+                                        <td th:text="${coa.coach_name}+',性别：'+${coa.coach_sex}"></td>
+                                    </tr>
+
+                                    <tr>
+                                        <th width="15%">特长</th>
+                                        <td th:text="${coa.coach_expert}"></td>
+                                    </tr>
+                                    <tr>
+                                        <th width="15%">教练简介</th>
+                                        <td ><textarea rows="" cols=""  class="textarea" readonly="readonly"  th:text="${coa.coach_resume}"></textarea></td>
+                                    </tr>
+                                    <tr>
+                                        <th width="15%">私教信息</th>
+                                        <td>
+                                           <!-- <div  th:each="ch,classHourStat : ${coa.classHourList}" >-->
+												<b>课程类型：</b>[[${coa.classHour.ch_type}]]<br>
+												<b>课程简介：</b>[[${coa.classHour.ch_content}]]<br>
+                                                    <b>课程价格：</b><span style="color:red;">[[${coa.classHour.ch_price}]]</span>元/课时
+
+                                        </td>
+                                    </tr>
+                                <tr>
+                                        <th>联系方式</th>
+                                        <td th:html="'<b>手机：</b>'+${coa.coach_mobile}+',<b>微信：</b>'+${coa.coach_wechat}+',<b>qq：</b>'+${coa.coach_qq}"></td>
+                                    </tr>
+                                    <span th:if="${not #strings.isEmpty(session.m_id)}" th:remove="tag">
+                                         <tr>
+                                        <th>预约私教</th>
+                                             <td>
+                                                 <!-- <div  th:each="ch,classHourStat : ${coa.classHourList}" >-->
+                                                 <button onclick="appoint(this.value)" class="btn btn-success radius" th:value="${coa.classHour.ch_id}" th:text="确定预约">
+												 </button>
+
+                                                 <input type="hidden" th:value="${coa.coach_id}"id="coachid" >
+                                             </td>
+                                    </tr>
+                                    </span>
+                                </tbody>
+							</table>
+						</div>
+				</div>
+	</th:block>
+    </div>
+	</span>
+
+	<!--<iframe   src="new_file.html" width="600" height="500"   frameborder="1/0"  name="iframe名称"     scrolling="auto">
+	</iframe>-->
+	<span th:if="${sb} eq 'notice'" th:remove="tag">
+<div class="page-container"><img alt="" src="/img/notice.png" align="middle"><br>
+    当前位置：<a href="/">主页</a> ---> 系统公告<br><br>
+<div class="panel-body">
+	<table class="table table-border table-bordered table-hover table-bg table-sort">
+		<thead>
+			<tr class="text-c">
+				<th width="60">发布人</th>
+				<th width="90">公告标题</th>
+				<th width="80">发布时间</th>
+				<th width="140">公告附件</th>
+				<th width="40">公告状态</th>
+			</tr>
+		</thead>
+		<tbody>
+		  <th:block th:each="n,noticeStat : ${notice}" th:remove="tag">
+			<tr class="text-c">
+				<td>[[${n.admin.admin_name}]]</td>
+				<td><a href="javascript:;" title="查看公告详情" th:onClick="'notice_show(\'公告详细信息\',\'/notice/toShowNotice?notice_id='+${n.notice_id}+'\',\'10001\',\'\',\'350\')'" class="ml-5" style="text-decoration:none">
+							[[${n.notice_title}]]
+						</a>
+				</td>
+				<td>[[${n.notice_date}]]</td>
+				<td>
+				<a title="下载附件" th:href="'/notice/downloadNoticeFile?notice_file='+${n.notice_file}" class="ml-5" style="text-decoration:none">[[${n.notice_file}]]</a>
+				</td>
+				<td>
+				<span th:if="${n.notice_state} eq '1'" class="label label-success radius">生效</span>
+				<span th:if="${n.notice_state} eq '0'" class="label radius">已失效</span>
+				</td>
+			</tr>
+		  </th:block>
+		</tbody>
+	</table><br>
+	</div>
+	</div>
+	</span>
+
+    <span th:if="${sb} eq 'message'" th:remove="tag">
+    <article class="page-container"> <img alt="" src="/img/mes.png" align="middle"><br>
+    当前位置：<a href="/">主页</a> ---> 系统留言<br><br>
+        <form class="form form-horizontal" id="form-message-add">
+            <div class="row cl">
+                <label class="form-label col-xs-4 col-sm-3"><span class="c-red"></span>会员：</label>
+                <div class="formControls col-xs-7">
+                    <b>[[${session.self.member_name}]]</b>
+                </div>
+            </div>
+            <div class="row cl">
+                <label class="form-label col-xs-4 col-sm-3"><span class="c-red"></span>留言主题：</label>
+                <div class="formControls col-xs-7">
+                    <input type="text" class="input-text" placeholder="简洁一点" name="mes_title" id="mes_title">
+                </div>
+            </div>
+            <div class="row cl">
+                <label class="form-label col-xs-4 col-sm-3">留言内容：</label>
+                <div class="formControls col-xs-7">
+                    <textarea name="mes_content" id="mes_content" cols="" rows="" class="textarea"  placeholder="简要阐述一下...200个字符以内" ></textarea>
+                    <p class="textarea-numberbar"><em class="textarea-length">0</em>/200</p>
+                </div>
+            </div>
+            <div class="row cl">
+                <div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-3">
+                    <input class="btn btn-primary radius" type="submit" value="&nbsp;&nbsp;提交&nbsp;&nbsp;">
+                </div>
+            </div>
+        </form>
+    </article>
+    <div class="page-container">
+        <div class="panel-body">
+            <table class="table table-border table-bordered table-hover table-bg table-sort">
+                <thead>
+                <tr class="text-c">
+                    <th width="100">主题</th>
+                    <th width="150">内容</th>
+                    <th width="30">时间</th>
+                    <th width="65">接收方阅读情况</th>
+                    <th width="20">操作</th>
+                </tr>
+                </thead>
+                <tbody>
+               <th:block th:each="mes,messageStat : ${message}" th:remove="tag">
+                    <tr class="text-c">
+                        <td>[[${mes.mes_title}]]</td>
+                        <td>[[${mes.mes_content}]]</td>
+                        <td>[[${mes.mes_time}]][[${mes.mes_id}]]</td>
+                        <td>
+                         <span th:if="${mes.mes_read} eq '0'" class="label  radius">未读</span>
+                         <span th:if="${mes.mes_read} eq '1'" class="label label-success radius">已读</span>
+                        </td>
+                        <td class="td-manage">
+                            <a title="删除留言" href="javascript:void(0);" id="mes_del" th:value="${mes.mes_id}" th:onclick="'message_del('+${mes.mes_id}+')'" class="ml-5" style="text-decoration:none"><i class="Hui-iconfont">&#xe6e2;</i></a>
+                        </td>
+                    </tr>
+               </th:block>
+                </tbody>
+            </table><br>
+        </div>
+    </div>
+    </span>
+
+
+	<span th:if="${sb} eq 'user'" th:remove="tag">
+        <article class="page-container"> <img alt="" src="/img/pwd.png" align="middle"><br>
+    当前位置：<a href="/">主页</a> ---> 个人中心<br><br>
+    <br>个人密码修改&nbsp;&nbsp;&nbsp;&nbsp;<font color="red">温馨提示：密码修改完成需要重新登录</font>
+	<form class="form form-horizontal" id="form-user-passwordEdit">
+	<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3"><span class="c-red"></span>账户id：</label>
+		<div class="formControls col-xs-7">
+			<b>[[${session.m_id}]]</b>
+			<input type="hidden"  th:value="${session.m_id}" id="user_id" name="user_id" >
+		</div>
+	</div>
+	<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3"><span class="c-red"></span>旧密码：</label>
+		<div class="formControls col-xs-7">
+			<input type="password" class="input-text" autocomplete="off" th:value="${session.m_pwd}" placeholder="6-15位"  readonly="readonly">
+		</div>
+	</div>
+	<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3"><span class="c-red">*</span>新密码：</label>
+		<div class="formControls col-xs-7">
+			<input type="password" class="input-text" autocomplete="off"  placeholder="长度在6-15位之间" id="user_pwd" name="user_pwd">
+		</div>
+	</div>
+	<div class="row cl">
+			<label class="form-label col-xs-4 col-sm-3"><span class="c-red">*</span>确认密码：</label>
+			<div class="formControls col-xs-7">
+			<input type="password" class="input-text" autocomplete="off" placeholder="再输一遍，确认密码" id="password" name="password">
+			</div>
+		</div>
+	<div class="row cl">
+		<div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-3">
+			<input class="btn btn-primary radius" type="submit" value="&nbsp;&nbsp;提交&nbsp;&nbsp;">
+		</div>
+	</div>
+	</form><br>
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+<form class="form form-horizontal" id="form-member-edit">
+		<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3"><span class="c-red"></span>账号：</label>
+		<div class="formControls col-xs-7">
+				<b>[[${session.m_id}]]</b>
+			<input type="hidden" class="input-text" th:value="${member.member_id}" id="member_id" name="member_id">
+		</div>
+	</div>
+<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3"><span class="c-red"></span>姓名：</label>
+		<div class="formControls col-xs-7">
+			<b>[[${member.member_name}]]</b>
+			<input type="hidden" class="input-text" th:value="${member.member_name}" id="member_name" name="member_name">
+		</div>
+	</div>
+	<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3"><span class="c-red"></span>性别：</label>
+		<div class="formControls col-xs-7">
+			<b>[[${member.member_sex}]]</b>
+			<input type="hidden" class="input-text" th:value="${member.member_sex}" id="member_sex" name="member_sex">
+		</div>
+	</div>
+<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3"><span class="c-red"></span>微信：</label>
+		<div class="formControls col-xs-7">
+			<input type="text" class="input-text"   th:value="${member.member_wechat}" placeholder="" id="member_wechat" name="member_wechat" onkeyup="this.value=this.value.replace(/[^\w_]/g,'');">
+		</div>
+	</div>
+	<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3"><span class="c-red"></span>QQ：</label>
+		<div class="formControls col-xs-7">
+			<input type="text" class="input-text"   th:value="${member.member_qq}" placeholder="" id="member_qq" name="member_qq" >
+		</div>
+	</div>
+	<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3"><span class="c-red"></span>手机：</label>
+		<div class="formControls col-xs-7">
+			<input type="text" class="input-text" placeholder="" th:value="${member.member_mobile}" name="member_mobile" id="member_mobile">
+		</div>
+	</div>
+	<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3"><span class="c-red"></span>身份证：</label>
+		<div class="formControls col-xs-7">
+			<b>[[${member.member_idcard}]]</b>
+		</div>
+	</div>
+		<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3"><span class="c-red"></span>会员卡id：</label>
+		<div class="formControls col-xs-7">
+			 <a href="javascript:void(0);" title="查看会员卡内容" th:onclick="'mc_show(\'会员卡详细信息\',\'/admin/toShowMc?mc_id='+${member.memberCard.mc_id}+'\',\'10001\',\'\',\'400\')'" class="ml-5" style="text-decoration:none">
+						 	<b>[[${member.memberCard.mc_id}]]</b>
+						</a>
+		</div>
+	</div>
+		<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3"><span class="c-red"></span>会员卡期限：</label>
+		<div class="formControls col-xs-7">
+			<b>[[${member.member_mcStart}]]到[[${member.member_mcEnd}]]</b>
+		</div>
+	</div>
+	<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3"><span class="c-red"></span>联系地址：</label>
+		<div class="formControls col-xs-7">
+			<input type="text" class="input-text" placeholder="" th:value="${member.member_address}" name="member_address" id="member_address">
+		</div>
+	</div>
+	<div class="row cl">
+		<label class="form-label col-xs-4 col-sm-3">个人简介：</label>
+		<div class="formControls col-xs-7">
+			<textarea name="member_resume" id="member_resume" cols="" rows="" class="textarea"  placeholder="说点什么...100个字符以内" >[[${member.member_resume}]]</textarea>
+		</div>
+	</div>
+	<div class="row cl">
+		<div class="col-xs-8 col-sm-9 col-xs-offset-4 col-sm-offset-3">
+			<input class="btn btn-primary radius" type="submit" value="&nbsp;&nbsp;提交&nbsp;&nbsp;">
+		</div>
+	</div>
+	</form>
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			<div class="page-container">
+	<div class="panel-body">
+		<table class="table table-border table-bordered table-hover table-bg table-sort">
+			<thead>
+			<tr class="text-c">
+				<th width="40">账单id</th>
+				<th width="120">付款金额</th>
+				<th width="80">付款时间</th>
+				<th width="35">购买的套餐id</th>
+			</tr>
+			</thead>
+			<tbody>
+			 <th:block th:each="f,feeStat : ${fee}">
+			<tr>
+				<td>[[${f.fee_id}]]</td>
+				<td>[[${f.fee_used}]]元</td>
+				<td>[[${f.fee_datetimet}]]</td>
+				<td>
+					<a href="javascript:void(0);" title="查看套餐内容" th:onclick="'setMeal_show(\'套餐详细信息\',\'/user/toShowSetMeal?sm_id='+${f.setMeal.sm_id}+'\',\'10001\',\'\',\'400\')'" class="ml-5" style="text-decoration:none">
+						[[${f.setMeal.sm_id}]]
+						</a>
+				</td>
+			</tr>
+			 </th:block>
+			</tbody>
+		</table>
+	</div>
+</div>
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				<div class="page-container">
+	<div class="panel-body">
+		<table class="table table-border table-bordered table-hover table-bg table-sort">
+			<thead>
+			<tr class="text-c">
+				<th width="40">课时id</th>
+				<th width="120">剩余课时</th>
+				<th width="80">课时状态</th>
+			</tr>
+			</thead>
+			<tbody>
+			 <th:block th:each="mch,mchStat : ${mch}">
+			<tr>
+				<td>
+					<a href="javascript:void(0);" title="查看课时内容" th:onclick="'ch_show(\'课时详细信息\',\'/user/toShowCh?ch_id='+${mch.ch_id}+'\',\'10001\',\'\',\'400\')'" class="ml-5" style="text-decoration:none">
+						[[${mch.ch_id}]]
+						</a>
+				</td>
+				<td>[[${mch.mch_remainingQuantity}]]课时</td>
+				<td th:if="${mch.mch_state} eq 1"><b style="color:red;">可用</b></td>
+			<td th:if="${mch.mch_state} eq 0"><b style="color:red;">不可用（你没有购买会员卡）</b></td>
+			</tr>
+			 </th:block>
+			</tbody>
+		</table>
+	</div>
+</div>
+		</article>
+	</span>
+
+
+	<span th:if="${sb} eq 'setMeal'" th:remove="tag">
+		  <div class="page-container">
+            <img alt="" src="/img/sm.png" align="middle"><br>
+    当前位置：<a href="/">主页</a> ---> 套餐信息<br><br>
+                <form action="/coach/findUpCoachByTitleWeb" method="post">
+				<select class="select" style="width:100px" name="condition" size="1">
+				<option value="sm_name">套餐名称</option>
+				<option value="ch_type">课程类型</option>
+                <option value="mc_content">会员卡类型</option>
+                    <option value="sm_price">套餐费用</option>
+			</select>
+			<input type="text" class="input-text" style="width:200px" placeholder="先选择左边的需要查询的条件" id="input" name="input">
+			<button type="submit" class="btn btn-success radius"><i class="Hui-iconfont">&#xe665;</i> 搜套餐</button>
+		</form>
+              <th:block th:each="sm,setMealStat : ${setMeal}">
+		<div class="panel panel-default mt-15" th:id="${setMealStat.index}" onclick="findSmQuantityById(this.id)">
+			<div class="panel-header clearfix">
+				<span th:text="'套餐名称：'+${sm.sm_name}" class="f-l"></span>
+				<span  th:text="'价格：'+${sm.sm_price}" class="f-r"></span>
+			</div>
+			<div class="panel-body" style="display: none;" >
+							<table class="table table-border table-bordered table-bg mt-5">
+								<thead>
+									<tr>
+										<th colspan="2" scope="col">套餐详情</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+                                        <th width="15%">套餐</th>
+                                        <td colspan="2" th:text="${sm.sm_name}+',价格：'+${sm.sm_price}"></td>
+                                    </tr>
+									<tr>
+                                        <th width="15%">会员卡</th>
+                                        <td colspan="2" th:text="'会员卡名称'+${sm.memberCard.mc_content}+',价格：'+${sm.memberCard.mc_price}"></td>
+                                    </tr>
+                                    <tr>
+                                        <th width="15%">私教</th>
+                                        <td colspan="2">
+                                            <div  th:each="ch,classHourStat : ${sm.classHourList}" >
+												<span><b>课程类型：</b>[[${ch.ch_type}]]<br>
+												    <b>课程简介：</b>[[${ch.ch_content}]]<br>
+													<b>价格：</b><b style="color: red">[[${ch.ch_price}]]元</b><br>
+												</span>
+												 <input type="hidden" th:value="${ch.ch_id}" id="chid">
+                                            </div>
+                                        </td>
+                                    </tr>
+									<tr>
+                                        <th width="15%">课时详情</th>
+                                         <td>
+										<div  th:each="ch,classHourStat : ${sm.classHourList}" >
+										 <b>课程类型：</b>[[${ch.ch_type}]]<br>
+										</div>
+                                             </td>
+                                        <td>
+										<div th:id="'smchs'+${setMealStat.count}" >
+
+										</div>
+                                        </td>
+                                    </tr>
+                                         <tr>
+                                        <th>购买套餐</th>
+                                             <td colspan="2">
+												 <form action="/pay/AliPay" method="post">
+                                                 <input  class="btn btn-success radius"  type="submit" value="确认购买" >
+													 <input type="hidden" name="sm_id" th:id="'btn'+${setMealStat.index}" th:value="${sm.sm_id}">
+                                                 <input type="hidden" th:value="${sm.memberCard.mc_id}" id="mcid">
+												 </form>
+                                             </td>
+                                    </tr>
+                                </tbody>
+							</table>
+						</div>
+				</div>
+	</th:block>
+    </div>
+	</span>
+
+	<span th:if="${sb} eq 'inform'" th:remove="tag">
+	<div class="page-container"><img alt="" src="/img/inform.png" align="middle"><br>
+		当前位置：<a href="/welcome/member">主页</a> ---> 消息箱<br>
+		<div class="panel-body">
+			<div id="HuiTab-demo1" class="HuiTab">
+				<div class="tabBar cl">
+					<span>未读信息</span><span>已读信息</span><span>全部信息</span>
+				</div>
+
+				<div class="tabCon"><!--未读信息  -->
+					<div class="mt-10">
+						<table class="table table-border table-bordered table-hover table-bg table-sort">
+							<thead>
+							<tr class="text-c">
+								<th width="20"><i class="Hui-iconfont">&#xe68a;</i></th>
+								<th width="40">发送方</th>
+								<th width="120">主题</th>
+								<th width="80">时间</th>
+								<th width="30">操作</th>
+							</tr>
+							</thead>
+							<tbody>
+							  <th:block th:each="ri,notReadStat : ${notRead}">
+								<tr class="text-c">
+									<td>
+										<i th:if="${ri.inform_read} eq 0" class="Hui-iconfont">&#xe63b;</i>
+									    <i th:if="${ri.inform_read} eq 1" class="Hui-iconfont">&#xe70b;</i>
+									</td>
+									<td>[[${ri.admin.admin_name}]]</td>
+									<td>
+										<a href="javascript:;" title="查看通知详情" th:onClick="'inform_show(\'通知详细信息\',\'/inform/toShowInform?ri_id='+${ri.inform_id}+'&inform_id='+${ri.inform_id}+'\',\'10001\',\'\',\'350\')'" class="ml-5" style="text-decoration:none">
+											[[${ri.inform_title}]]
+										</a>
+									</td>
+									<td>[[${ri.inform_time}]]</td>
+									<td>
+										<a title="删除" href="javascript:;" th:onclick="'inform_del(\'/inform/deleteInform?inform_id='+${ri.inform_id}+'\')'" class="ml-5" style="text-decoration:none"><i class="Hui-iconfont">&#xe6e2;</i></a>
+									</td>
+								</tr>
+							  </th:block>
+							</tbody>
+						</table><br>
+					</div>
+				</div>
+
+				<div class="tabCon"><!--已读信息  -->
+					<div class="mt-10">
+						<table
+								class="table table-border table-bordered table-hover table-bg table-sort">
+							<thead>
+							<tr class="text-c">
+								<th width="20"><i class="Hui-iconfont">&#xe70b;</i></th>
+								<th width="40">发送方</th>
+								<th width="120">主题</th>
+								<th width="80">时间</th>
+								<th width="30">操作</th>
+							</tr>
+							</thead>
+							<tbody>
+							  <th:block th:each="ri,ReadStat : ${Read}">
+								<tr class="text-c">
+									<td>
+										<i th:if="${ri.inform_read} eq 0" class="Hui-iconfont">&#xe63b;</i>
+										<i th:if="${ri.inform_read} eq 1" class="Hui-iconfont">&#xe70b;</i>
+									</td>
+									<td>[[${ri.admin.admin_name}]]</td>
+									<td><a href="javascript:;" title="查看通知详情"
+										   th:onClick="'inform_show(\'通知详细信息\',\'/inform/toShowInform?ri_id='+${ri.inform_id}+'&inform_id='+${ri.inform_id}+'\',\'10001\',\'\',\'350\')'"
+										   class="ml-5" style="text-decoration: none">
+										[[${ri.inform_title}]] </a></td>
+									<td>[[${ri.inform_time}]]</td>
+									<td><a title="删除" href="javascript:;"
+										   th:onclick="'inform_del(\'/inform/deleteInform?inform_id='+${ri.inform_id}+'\')'"
+										   class="ml-5" style="text-decoration: none"><i
+											class="Hui-iconfont">&#xe6e2;</i></a></td>
+								</tr>
+							  </th:block>
+							</tbody>
+						</table><br>
+					</div>
+				</div>
+
+				<div class="tabCon"><!--全部信息  -->
+					<div class="mt-10">
+						<table class="table table-border table-bordered table-hover table-bg table-sort">
+							<thead>
+							<tr class="text-c">
+								<th width="20"><i class="Hui-iconfont">&#xe63b;</i></th>
+								<th width="40">发送方</th>
+								<th width="120">主题</th>
+								<th width="80">时间</th>
+								<th width="30">操作</th>
+							</tr>
+							</thead>
+							<tbody>
+							  <th:block th:each="ri,allInformStat : ${allInform}">
+								<tr class="text-c">
+									<td>
+										<i th:if="${ri.inform_read} eq 0" class="Hui-iconfont">&#xe63b;</i>
+										<i th:if="${ri.inform_read} eq 1" class="Hui-iconfont">&#xe70b;</i>
+									</td>
+									<td>[[${ri.admin.admin_name}]]</td>
+									<td>
+										<a href="javascript:;" title="查看通知详情"  th:onClick="'inform_show(\'通知详细信息\',\'/inform/toShowInform?ri_id='+${ri.inform_id}+'&inform_id='+${ri.inform_id}+'\',\'10001\',\'\',\'350\')'" class="ml-5" style="text-decoration:none">
+											[[${ri.inform_title}]]
+										</a>
+									</td>
+									<td>[[${ri.inform_time}]]</td>
+									<td>
+										<a title="删除" href="javascript:;"  th:onclick="'inform_del(\'/inform/deleteInform?inform_id='+${ri.inform_id}+'\')'" class="ml-5" style="text-decoration:none"><i class="Hui-iconfont">&#xe6e2;</i></a>
+									</td>
+								</tr>
+							  </th:block>
+							</tbody>
+						</table><br>
+					</div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+	</span>
+
+
+
+
+</div>
+<div class="footer">招聘信息列表。。。到头了哦！!<br>Copyright &copy; 2019 苏文豪 All rights reserved</div>
+<!--_footer 作为公共模版分离出去--> 
+<script type="text/javascript" src="/lib/jquery/1.9.1/jquery.js"></script>
+<script type="text/javascript" src="/lib/layer/2.4/layer.js"></script>
+<script type="text/javascript" src="/h-ui/js/H-ui.min.js"></script>
+<script type="text/javascript" src="/h-ui.admin/js/H-ui.admin.js"></script>
+<!--/_footer 作为公共模版分离出去-->
+<script type="text/javascript" src="/lib/jquery.validation/1.14.0/jquery.validate.js"></script>
+<script type="text/javascript" src="/lib/jquery.validation/1.14.0/validate-methods.js"></script>
+<script type="text/javascript" src="/lib/jquery.validation/1.14.0/messages_zh.js"></script>
+<script type="text/javascript" src="/lib/laypage/1.2/laypage.js"></script>
+<script type="text/javascript" src="/lib/My97DatePicker/4.8/WdatePicker.js"></script>
+<script type="text/javascript" src="/lib/datatables/1.10.0/jquery.dataTables.min.js"></script>
+<!--请在下方写此页面业务相关的脚本-->
+<script>
+	//选项卡
+	$("#HuiTab-demo1").Huitab({
+		index : 0
+	});
+	$("#Huitags-demo1").Huitags();
+
+	/*通知-删除*/
+	function inform_del(url) {
+		layer.confirm('确认要删除吗？', {
+			btn : [ '确定', '取消' ],
+			title : "提示"
+		}, function() {
+			$.ajax({
+				url : url,
+				type : "GET",
+				dataType : "text",
+				success : function(data) {
+					if (data == "1") {
+						layer.confirm('删除成功！', {
+							btn: ['确定']
+						},  function(){
+							location.reload();
+						});
+					} else {
+						layer.alert("删除失败！该同乡会还有会员！！");
+
+					}
+				},
+				error : function() {
+					layer.alert("又失败了！哈哈哈哈");
+				}
+			});
+		});
+	}
+	/*公告 -详情*/
+	function notice_show(title,url,id,w,h){
+		layer_show(title,url,w,h);
+	}
+	/*通知详细信息-查看*/
+	function inform_show(title, url, id, w, h) {
+		layer_show(title, url, w, h);
+	}
+    /*套餐详细信息-查看*/
+    function setMeal_show(title, url, id, w, h) {
+        layer_show(title, url, w, h);
+    }
+    /*会员卡详细信息-查看*/
+    function mc_show(title, url, id, w, h) {
+        layer_show(title, url, w, h);
+    }
+    /*课时详细信息-查看*/
+    function ch_show(title, url, id, w, h) {
+        layer_show(title, url, w, h);
+    }
+	$(function(){
+	/*留言-删除*/
+	message_del=function (mes_id){
+		var mesid=$("#mes_del").attr("value");
+		alert("留言id："+mesid);
+		layer.confirm('管理员将看不到该留言，确认要删除吗？',{btn: ['确定', '取消'],title:"提示"},function(){
+			$.ajax({
+				url:'/message/deleteMessage?mes_id='+mesid,
+				type:"GET",
+				dataType:"text",
+				success:function(data){
+					if(data=="1"){
+						layer.confirm('删除成功！', {
+							btn: ['确定']
+						},  function(){
+							location.reload();
+						});
+					}
+					else{
+						layer.alert("删除失败！一般来说不会失败的！！");
+					}
+				},
+				error:function(){
+					layer.alert("又失败了！哈哈哈哈");
+				}
+			});
+		});
+	}
+	/*留言-添加*/
+	$("#form-message-add").validate({
+		rules:{
+			mes_title:{
+				required:true,
+			},
+			mes_content:{
+				required:true,
+			},
+		},
+		onkeyup:false,
+		focusCleanup:true,
+		success:"valid",
+		submitHandler:function(form){
+			$(form).ajaxSubmit({
+				type: 'post',
+				url: "/message/addMessage" ,
+				dataType:"text",
+				async: false,
+				success: function(data){
+					if(data=="1"){
+						layer.confirm('留言添加成功！', {
+							btn: ['确定']
+						},  function(){
+							window.location.href="/message/findMessageByMemberWeb";
+						});
+					}else if(data=="0"){
+						layer.alert("添加失败！一般不会出现");
+					}
+				},
+				error: function(XmlHttpRequest, textStatus, errorThrown){
+					layer.alert("您还没登录呢，请先返回主页登录！");
+				}
+			});
+		}
+	});
+});
+</script>
+<!--/请在上方写此页面业务相关的脚本-->
+</body>
+</html>

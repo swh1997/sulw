@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.dgut.jsf.mapper.NoticeDao">
+	<!--查询所有生效的公告  联合查询-->
+	<select id="findAllNotice" resultMap="findAllNoticeResult">
+		select n.*,admin_name
+		from t_notice n,t_admin a
+		where n.admin_id=a.admin_id
+	</select>
+	<resultMap id="findAllNoticeResult" type="Notice">
+		<result property="notice_id" column="notice_id"></result>
+		<result property="notice_title" column="notice_title"></result>
+		<result property="notice_date" column="notice_date"></result>
+		<result property="notice_content" column="notice_content"></result>
+		<result property="notice_file" column="notice_file"></result>
+		<result property="notice_state" column="notice_state"></result>
+		<association property="admin" javaType="Admin">
+			<result property="admin_name" column="admin_name"></result>
+		</association>
+	</resultMap>
+	<!--根据id查询公告 一对一-->
+	<select id="findNoticeById" parameterType="Integer" resultMap="findAllNoticeResult">
+	select n.*,a.admin_name
+		from t_notice n,t_admin a
+		where n.admin_id=a.admin_id and
+		 n.notice_id=#{notice_id}
+	</select>
+	<update id="updateNotice" parameterType="Notice">
+		update t_notice
+		<set>
+			notice_title=#{notice_title},
+			<if test="notice_file != null">
+				notice_file=#{notice_file},
+			</if>
+			notice_content=#{notice_content}
+		</set>
+		where notice_id=#{notice_id}
+	</update>
+	<delete id="deleteNotice" parameterType="String">
+		delete from t_notice where notice_id=#{notice_id}
+	</delete>
+	<update id="updateNoticeState" parameterType="Notice">
+		update t_notice set notice_state= #{notice_state} where notice_id = #{notice_id}
+	</update>
+	<insert id="addNotice"  parameterType="Notice">
+		insert into t_notice(admin_id,notice_title,notice_content,notice_date,notice_file,notice_state)
+		values(#{admin.admin_id},#{notice_title},#{notice_content},#{notice_date},#{notice_file},#{notice_state})
+	</insert>
+
+</mapper>

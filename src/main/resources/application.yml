@@ -1,0 +1,39 @@
+spring:
+  datasource:
+     name: son
+     username: root
+     password: root
+     url: jdbc:mysql://localhost:3306/jsf?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=GMT
+     driver-class-name: com.mysql.jdbc.Driver
+  thymeleaf:
+     cache: false
+     prefix: classpath:/templates/
+     suffix: .html
+     mode: HTML5
+  devtools:
+     restart:
+      enabled: true
+      additional-paths: src/main/java
+      exclude: static/**
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: cn.dgut.jsf.bean
+  #关闭缓存，即时刷新
+  #spring.thymeleaf.prefix=classpath:/templates/
+  #spring.thymeleaf.suffix=.html
+  #spring.thymeleaf.mode=HTML5
+  #spring.webflux.static-path-pattern=classpath:/templates/index.html
+  #spring.freemaker.cashe=false
+  #spring.thymeleaf.cache=true
+  #热部署生效
+  #spring.devtools.restart.enable=true
+  #设置重启的目录，添加那个目录的文件需要restart
+  #spring.devtools.restart.additional-paths=src/main/java
+  #为mybatis设置，生产环境可删除
+  #restart.include.mapper=/mapper-[\\w-\\.]+jar
+  #restart.include.pagehelper=/pagehelper-[\\w-\\.]+jar
+  #排除那个目录的文件不需要restart
+  #spring.devtools.restart.exclude=static/**,public/**
+  #classpath目录下的WEB-INF文件夹内容修改不重启
+  #spring.devtools.restart.exclude=WEB-INF/**

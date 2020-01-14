@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html>
+<head>
+<meta charset="utf-8">
+<title>健身俱乐部管理系统</title>
+<link rel="Shortcut Icon" href="/favicon.ico" />
+<link rel="stylesheet" type="text/css" href="/h-ui/css/H-ui.min.css" />
+<link rel="stylesheet" type="text/css" href="/h-ui.admin/css/H-ui.admin.css" />
+<link rel="stylesheet" type="text/css" href="/lib/Hui-iconfont/1.0.8/iconfont.css" />
+<link rel="stylesheet" type="text/css" href="/h-ui.admin/skin/default/skin.css" id="skin" />
+<link rel="stylesheet" type="text/css" href="/h-ui.admin/css/style.css" />
+<link rel="stylesheet" href="/css/style1.css" type="text/css" media="all"/>
+</head>
+<body>
+<div id="hearder2" class="clearfix">
+	<div class="logo">
+   	  <img src="/img/index.png" >
+  </div>
+  <div class="logo-name">健身俱乐部管理平台</div>
+    <div class="form-tools">
+      	<div class="tools-link">
+        	<a href="/user/toLoginWeb" >管理员后台登录入口</a>
+        </div>
+    </div>
+</div>
+<div id="menu-box" class="clearfix">
+		<ul>
+    	 <span th:if="${#strings.isEmpty(session.m_id)}" th:remove="tag">
+            <li><a href="/">主页</a></li>
+        </span>
+			<span th:if="${not #strings.isEmpty(session.m_id)}" th:remove="tag">
+            <li><a href="/welcome/member">主页</a></li>
+        </span>
+			<li><a href="/coach/findUpCoachWeb">教练信息</a></li>
+			<span th:if="${not #strings.isEmpty(session?.self?.classHourList)}" th:remove="tag">
+            <li><a href="/coach/findAllMemberClassHourWeb">我的私教</a></li>
+        </span>
+			<li><a href="/activity/findUpActivityWeb">活动信息</a></li>
+			<li><a href="/notice/findNoticeWeb">系统公告</a></li>
+			<li><a href="/facilityEquipment/findUpFacilityEquipmentWeb">设备和场地</a></li>
+			<span th:if="${not #strings.isEmpty(session.m_id)}" th:remove="tag">
+            <li><a href="/inform/findMyselfInformWeb">我的消息</a></li>
+            <li><a href="/message/findMessageByMemberWeb">联系我们</a></li>
+            <li><a href="/member/toPerfectMemberWeb">个人中心</a></li>
+            <li><a href="/user/Weblogout">退出登录</a></li>
+        </span>
+    </ul>
+</div><br>
+<!-- detail -->
+<div id="detail2-box">
+
+
+<div class="page-container"><img alt="" src="/img/act.png" align="middle"><br>
+    当前位置：<a href="/">主页</a> ---> 活动信息<br><br>
+		<form action="/activity/findUpActivityByTitleWeb" method="post">
+				<select class="select" style="width:100px" name="condition" size="1">
+				<option value="coach_name">教练名称</option>
+				<option value="act_name">活动主题</option>
+			</select>
+			<input type="text" class="input-text" style="width:200px" placeholder="先选择左边的需要查询的条件" id="input" name="input">
+			<button type="submit" class="btn btn-success radius"><i class="Hui-iconfont">&#xe665;</i> 搜活动</button>
+		</form>
+	<th:block th:each="act,activityStat : ${activity}">
+		<div class="panel panel-default mt-15">
+			<div class="panel-header clearfix">
+				<span th:text="'主题：'+${act.act_name}" class="f-l"></span>
+				<span  th:text="'活动开始时间：'+${act.act_time}" class="f-r"></span>
+			</div>
+			<div class="panel-body" style="display: none;">
+							<table class="table table-border table-bordered table-bg mt-5">
+								<thead>
+									<tr>
+										<th colspan="2" scope="col">活动详情</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<th width="15%">活动标题</th>
+										<td  th:text="${act.act_name}"></td>
+									</tr>
+									<tr>
+                                        <th width="15%">教练</th>
+                                        <td th:text="${act.coach.coach_name}+',性别：'+${act.coach.coach_sex}"></td>
+                                    </tr>
+
+                                    <tr>
+                                        <th width="15%">教练特长</th>
+                                        <td th:text="${act.coach.coach_expert}"></td>
+                                    </tr>
+                                    <tr>
+                                        <th width="15%">教练简介</th>
+                                        <td ><textarea rows="" cols=""  class="textarea" readonly="readonly"  th:text="${act.coach.coach_resume}"></textarea></td>
+                                    </tr>
+									<tr>
+										<th >活动内容</th>
+										<td><textarea rows="" cols=""  class="textarea" readonly="readonly"  th:text="${act.act_content}"></textarea></td>
+									</tr>
+									<tr>
+										<th>活动时间</th>
+										<td th:text="${act.act_time}"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+				</div>
+	</th:block>
+	</div>
+
+
+</div>
+<div class="footer">活动列表。。。到头了哦！!<br>Copyright &copy; 2019 苏文豪 All rights reserved</div>
+<!--_footer 作为公共模版分离出去--> 
+<script type="text/javascript" src="/lib/jquery/1.9.1/jquery.js"></script>
+<script type="text/javascript" src="/lib/layer/2.4/layer.js"></script>
+<script type="text/javascript" src="/h-ui/js/H-ui.min.js"></script>
+<script type="text/javascript" src="/h-ui.admin/js/H-ui.admin.js"></script>
+<!--/_footer 作为公共模版分离出去-->
+
+<!--请在下方写此页面业务相关的脚本-->
+<script type="text/javascript" src="/lib/jquery.validation/1.14.0/jquery.validate.js"></script>
+<script type="text/javascript" src="/lib/jquery.validation/1.14.0/validate-methods.js"></script>
+<script type="text/javascript" src="/lib/jquery.validation/1.14.0/messages_zh.js"></script>
+<script type="text/javascript" src="/lib/laypage/1.2/laypage.js"></script>
+<script type="text/javascript" src="/lib/My97DatePicker/4.8/WdatePicker.js"></script>
+<script type="text/javascript" src="/lib/datatables/1.10.0/jquery.dataTables.min.js"></script>
+<script type="text/javascript">
+	$(function() {
+		//返回顶部
+		$.Huitotop();
+
+		//收缩功能
+		$(".panel").Huifold({
+			titCell : '.panel-header',
+			mainCell : '.panel-body',
+			type : 1,
+			trigger : 'click',
+			className : "selected",
+			speed : "first",
+		});
+	});
+</script> 
+<!--/请在上方写此页面业务相关的脚本-->
+</body>
+</html>

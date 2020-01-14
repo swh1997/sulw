@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.dgut.jsf.mapper.InformDao">
+      <select id="findAllInform"  resultMap="findAllInformResult">
+          select i.*,m.member_name
+          from t_inform i,t_member m
+          where i.member_id=m.member_id
+      </select>
+<resultMap id="findAllInformResult" type="Inform">
+    <id column="inform_id" property="inform_id"></id>
+    <result column="inform_title" property="inform_title"></result>
+    <result column="inform_content" property="inform_content"></result>
+    <result column="inform_time" property="inform_time"></result>
+    <result column="inform_read" property="inform_read"></result>
+    <result column="inform_file" property="inform_file"></result>
+   <association property="member" javaType="Member">
+       <result column="member_name" property="member_name"></result>
+   </association>
+    <association property="admin" javaType="Admin">
+        <result column="admin_name" property="admin_name"></result>
+    </association>
+</resultMap>
+    <select id="findInformById" parameterType="int" resultMap="findAllInformResult">
+          select i.*,a.admin_name
+          from t_inform i,t_admin a
+          where  i.admin_id=a.admin_id and inform_id=#{inform_id}
+      </select>
+    <select id="findMemberReceiveInform"  parameterType="int" resultMap="findAllInformResult">
+          select i.*,a.admin_name
+          from t_inform i,t_admin a
+          where  i.admin_id=a.admin_id and member_id=#{member_id}
+      </select>
+    <select id="findMemberReceiveInformNotRead"  parameterType="int" resultMap="findAllInformResult">
+          select i.*,a.admin_name
+          from t_inform i,t_admin a
+          where  i.admin_id=a.admin_id and inform_read='0' and member_id=#{member_id}
+      </select>
+    <select id="findMemberReceiveInformRead"  parameterType="int" resultMap="findAllInformResult">
+          select i.*,a.admin_name
+          from t_inform i,t_admin a
+          where  i.admin_id=a.admin_id and inform_read='1' and member_id=#{member_id}
+      </select>
+    <select id="findAllMcName" resultType="MemberCard">
+        select * from t_membercard
+    </select>
+    <select id="findMenberByMcId" parameterType="int" resultType="Member">
+        select *
+        from t_member where mc_id=#{mc_id}
+    </select>
+    <insert id="addInform" parameterType="Inform">
+        insert into t_inform (member_id, inform_title , inform_content ,inform_time, inform_file,admin_id)
+        values (#{member.member_id},#{inform_title},#{inform_content},#{inform_time},#{inform_file},#{admin.admin_id});
+    </insert>
+    <delete id="deleteInform" parameterType="int">
+        delete from t_inform where inform_id=#{inform_id}
+    </delete>
+    <update id="changeRead" parameterType="int">
+        update t_inform set inform_read=1 where inform_id=#{inform_id}
+    </update>
+
+</mapper>
